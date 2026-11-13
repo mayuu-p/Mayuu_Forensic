@@ -31,3 +31,14 @@ for insert to authenticated with check (exists (
 
 grant insert, delete on public.mdfl_evidence to authenticated;
 grant insert on public.mdfl_metadata to authenticated;
+
+-- Add both owner-visible tables to Realtime if not already published.
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='mdfl_evidence') then
+    alter publication supabase_realtime add table public.mdfl_evidence;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='mdfl_metadata') then
+    alter publication supabase_realtime add table public.mdfl_metadata;
+  end if;
+end $$;
