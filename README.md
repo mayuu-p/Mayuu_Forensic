@@ -1,43 +1,31 @@
 # Mayuu Digital Forensics Lab (MDFL)
 
-A privacy-first, owner-operated photo evidence workspace. MDFL analyzes only images explicitly selected and uploaded by the authenticated user. It does not locate senders, access devices, or infer missing GPS data.
+A privacy-first, owner-operated photo evidence workspace. MDFL analyzes only images explicitly selected and uploaded by the user. It does not locate senders, access devices, or infer missing GPS data.
 
-## Current repository status
+## Current status
 
-This repository starts as an implementation scaffold. The Supabase project previously selected for MDFL (Dairy Mangement) is inactive and could not be inspected or restored because the free-project active limit was reached. **No Supabase schema, buckets, policies, or secrets have been changed.** Do not point this app at that project until its schema and storage have been inspected and an MDFL migration has been approved.
+The React web dashboard starter and Android Compose starter are committed. The Python API is a local development scaffold. The selected Supabase project (Dairy Mangement) remains inactive and could not be restored because the organization reached its free-project active limit. No Supabase schema, buckets, policies, or secrets have been changed.
 
-## Architecture
+## Repository
 
-- `web/`: React + TypeScript web client (planned)
-- `android/`: Kotlin + Jetpack Compose Android client (planned)
-- `forensic-engine/`: Python FastAPI processing service
-- `supabase/migrations/`: reviewed SQL migrations; not applied yet
+- web/: React + TypeScript + Vite dashboard. Supports explicit JPEG/PNG upload to the local API, SHA-256 display, EXIF field inspection, and embedded GPS display.
+- android/: Kotlin + Jetpack Compose starter with native system image picker. Authenticated upload and report display are not connected yet.
+- forensic-engine/: Python FastAPI processing service. Development-only, no authentication or persistence.
+- supabase/migrations/: proposed SQL only; not applied.
 
-### Evidence workflow
+## Run web dashboard
 
-1. User signs in and explicitly selects an image.
-2. API validates size, content signature, decodeability, and supported format.
-3. Server calculates SHA-256 over the exact uploaded bytes.
-4. Original bytes are stored privately and never transformed or overwritten.
-5. Isolated worker extracts available EXIF/GPS metadata.
-6. Stored object is downloaded and independently hashed; the two hashes are compared.
-7. Results and append-only audit events are persisted.
-8. UI displays GPS only when embedded coordinates exist; otherwise it says GPS unavailable.
+```bash
+cd web
+npm install
+npm run dev
+```
 
-## Security rules
+API default: http://localhost:8000. Override with VITE_MDFL_API_URL in web/.env.local.
 
-- Never expose Supabase service-role/secret keys in browser or Android builds.
-- Enable RLS on every exposed table; enforce ownership on rows and Storage paths.
-- Keep evidence buckets private. Use short-lived signed URLs only when needed.
-- Treat EXIF timestamps and GPS as untrusted, editable metadata, not proof of authenticity.
-- Keep server receipt time separate from EXIF capture time.
-- Process untrusted files in a resource-limited isolated worker; never execute uploads.
-- Permanent retention means retained until the owner explicitly deletes evidence. Maintain backups and a documented deletion process.
-- Do not deploy or apply the SQL migration until the existing Supabase project has been inspected.
+## Run forensic API
 
-## Local forensic engine
-
-Requirements: Python 3.11+, ExifTool installed in the host/container.
+Requirements: Python 3.11+ and ExifTool.
 
 ```bash
 cd forensic-engine
@@ -48,23 +36,32 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Health endpoint: `GET /health`. The initial API scaffold accepts an explicitly uploaded file and returns server-side SHA-256 plus extracted metadata. It is a development scaffold, not production-hardened; production requires authenticated gateway integration, private object storage, queue isolation, rate limits, malware scanning, and durable audit persistence.
+Health endpoint: GET /health. The current development endpoint accepts JPEG/PNG images and returns server-side SHA-256 plus available metadata. It has no authentication, no persistent storage, and must not be exposed publicly.
 
-## Supabase setup status
+## Android
 
-The SQL under `supabase/migrations/` is a proposed schema only. Review it against the actual database before applying. Bucket creation and Storage RLS policies are intentionally documented separately and must be configured only after the project is accessible and inspected.
+Open android/ in Android Studio and sync Gradle. The current native starter includes a dark interface and system image picker only. See android/README.md.
 
-## Roadmap
+## Security baseline
 
-- [x] Repository scaffold and security/architecture documentation
-- [x] Initial forensic API with upload validation, SHA-256 and EXIF extraction
-- [ ] Inspect existing Supabase project and reconcile migration
-- [ ] Create private buckets and ownership-scoped Storage policies
-- [ ] Add authenticated job queue and persistent metadata/audit records
-- [ ] Build React dashboard
-- [ ] Build Android client
-- [ ] Add chain-of-custody exports, integration tests and deployment hardening
+- Never expose Supabase service-role/secret keys in browser or Android builds.
+- Keep evidence storage private and enforce owner-scoped RLS and Storage policies.
+- Treat EXIF timestamps and GPS as untrusted, editable metadata, not proof of authenticity.
+- Keep server receipt time separate from EXIF capture time.
+- Hash exact original bytes; do not modify or overwrite source evidence.
+- Do not deploy or apply the proposed SQL until the Supabase project has been inspected.
 
-## Disclaimer
+## Remaining work
 
-MDFL is an evidence organization and metadata inspection tool. Metadata can be absent, stripped, or falsified. Hashes establish byte-level integrity relative to a recorded digest; they do not establish who captured an image, where it was captured, or whether its contents are truthful.
+- [x] Repository scaffold, security documentation and proposed SQL
+- [x] Development forensic API with upload validation, SHA-256 and metadata extraction
+- [x] React web dashboard starter
+- [x] Android Compose starter and native image picker
+- [ ] Restore/inspect Supabase and reconcile schema
+- [ ] Authenticated API, private storage, queue, durable audit history and owner-only access
+- [ ] Connect Android upload and analysis flow
+- [ ] Integration tests, chain-of-custody export and production deployment hardening
+
+## Important limitations
+
+Metadata may be absent, stripped, edited or falsified. SHA-256 establishes byte-level equality relative to a recorded digest; it does not prove who captured an image, where it was captured, or whether its contents are truthful.
