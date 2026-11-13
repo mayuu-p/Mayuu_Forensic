@@ -1,13 +1,18 @@
 # MDFL Android client
 
-Planned native client: Kotlin + Jetpack Compose.
+Native Kotlin + Jetpack Compose starter project. Open the android/ directory in Android Studio (Giraffe or newer) and sync Gradle.
 
-Implementation requirements:
-- Use Android Photo Picker for explicit image selection.
-- Request photo-location metadata access only where supported and explain why.
-- Never request continuous/background location; MDFL reads embedded image metadata only.
-- Upload through authenticated HTTPS API; never bundle Supabase service-role credentials.
-- Display GPS as unavailable when metadata is absent.
-- Use Android Keystore-backed secure token storage and PKCE-compatible auth flow.
-- Show upload/processing status and hash verification result.
-- Do not claim a file is authentic based only on EXIF or SHA-256.
+## Current functionality
+- Native Material 3 dark interface.
+- Explicit image selection using Android's system document picker (no broad media permission and no background location permission).
+- Shows the selected URI and clearly labels the app as a client scaffold.
+
+## Not yet connected
+Authenticated API upload, SHA-256 result display, EXIF/GPS report, owner authentication, Keystore token storage, persistent evidence history, and Supabase integration remain pending. Do not distribute this as a production evidence app yet.
+
+## Security constraints
+- Never request continuous/background location.
+- Never bundle Supabase service-role credentials.
+- Use authenticated HTTPS only; production must disable cleartext traffic.
+- Keep original evidence bytes unchanged and show absent GPS as unavailable.
+- Treat EXIF values as untrusted metadata, not proof of authenticity.
