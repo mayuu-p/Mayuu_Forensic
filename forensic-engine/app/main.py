@@ -10,9 +10,20 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, UnidentifiedImageError
 
 app = FastAPI(title="MDFL Forensic Engine", version="0.1.0")
+
+# Local development origins only. Set MDFL_CORS_ORIGINS to a comma-separated
+# allowlist of exact HTTPS origins before deploying a trusted frontend.
+allowed_origins = [origin.strip() for origin in os.getenv(
+    "MDFL_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173"
+).split(",") if origin.strip()]
+app.add_middleware(
+    CORSMiddleware, allow_origins=allowed_origins, allow_credentials=False,
+    allow_methods=["GET", "POST"], allow_headers=["Content-Type"],
+)
 
 MAX_BYTES = 25 * 1024 * 1024
 ALLOWED_FORMATS = {"JPEG": "image/jpeg", "PNG": "image/png", "HEIF": "image/heic", "HEIC": "image/heic"}
